@@ -32,6 +32,17 @@
                         label: "Speed",
                         data: [],
                     }]
+                },
+                scales: {
+                    x: {
+                        type: "time",
+                        time: {
+                            unit: "hour",
+                            displayFormats: {
+                                hour: "DD HH:mm",
+                            },
+                        },
+                    }
                 }
             });
         }
@@ -51,10 +62,30 @@
                         `;
                         results.appendChild(row);
                         // add to beggining of the array
-                        speedChart.data.labels.unshift(new Date(result.start).toISOString());
+                        speedChart.data.labels.unshift(new Date(result.start));
                         speedChart.data.datasets[0].data.unshift(result.speed/1000);
                         speedChart.update();
                     }
+                    // Merge close speeds < 0.9 difference
+                    let newlabels = [speedChart.data.labels[0]];
+                    let newdata = [speedChart.data.datasets[0].data[0]];
+                    for( let i = 1; i < speedChart.data.labels.length - 2; i++ ){
+                        let currLabel = speedChart.data.labels[i];
+                        let prevValue = newdata.at(-1);
+                        let futureValue = speedChart.data.datasets[0].data[i+1];
+                        let currValue = speedChart.data.datasets[0].data[i];
+                        if( Math.abs(prevValue - currValue) > 0.9 ){
+                            newlabels.push(currLabel);
+                            newdata.push(currValue);
+                        }
+                        else if( Math.abs(currValue - futureValue) > 0.9 ){
+                            newlabels.push(currLabel);
+                            newdata.push(currValue);
+                        }
+                    }
+                    speedChart.data.labels = newlabels;
+                    speedChart.data.datasets[0].data = newdata;
+                    speedChart.update();
                     if(data.length > 0 && data[data.length - 1].start > new Date(Date.now() - 24 * 60 * 60 * 1000)){ // only load the last 24 hours
                         setTimeout(() => loadData(page + 1), 200);
                     }
