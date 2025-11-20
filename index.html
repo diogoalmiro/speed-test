@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speed results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+</head>
+<body class="container">
+    <h1>Speed results</h1>
+    <canvas id="speedChart"></canvas>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Start</th>
+                <th>End</th>
+                <th>Duration (s)</th>
+                <th>Filesize (MB)</th>
+                <th>Speed (MB/s)</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+    <script>
+        let speedChart = null;
+        function createSpeedChart(){
+            speedChart = new Chart(document.getElementById("speedChart"), {
+                type: "line",
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: "Speed",
+                        data: [],
+                    }]
+                }
+            });
+        }
+        function loadData(page=0){
+            fetch(`/results?page=${page}`)
+                .then(response => response.json())
+                .then(data => {
+                    const results = document.getElementById("results");
+                    for(const result of data){
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td><code>${new Date(result.start).toISOString()}</code></td>
+                            <td><code>${new Date(result.end).toISOString()}</code></td>
+                            <td><code>${result.duration/1000}</code></td>
+                            <td><code>${result.filesize/1000000}</code></td> 
+                            <td><code>${result.speed/1000}</code></td>
+                        `;
+                        results.appendChild(row);
+                        // add to beggining of the array
+                        speedChart.data.labels.unshift(new Date(result.start).toISOString());
+                        speedChart.data.datasets[0].data.unshift(result.speed/1000);
+                        speedChart.update();
+                    }
+                    if(data.length > 0 && result.start > new Date(Date.now() - 24 * 60 * 60 * 1000)){ // only load the last 24 hours
+                        setTimeout(() => loadData(page + 1), 200);
+                    }
+                });
+        }
+        window.addEventListener("DOMContentLoaded", () => {
+            createSpeedChart();
+            loadData();
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</body>
+</html>
