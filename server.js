@@ -8,7 +8,7 @@ if( !port ) throw new Error("Invalid PORT");
 const db = new Database("/home/pi4/speed.db");
 
 const selectStm = db.prepare(`SELECT start, end, duration, filesize, (filesize / duration) AS speed FROM speed ORDER BY id DESC LIMIT :limit OFFSET :offset`);
-const perPage = 5;
+const perPage = 100;
 
 http.createServer((req, res) => {
     let url = new URL(req.url, "http://localhost");
