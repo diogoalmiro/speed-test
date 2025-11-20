@@ -2,10 +2,13 @@ const http = require("http");
 const { createReadStream } = require("fs");
 const Database = require("better-sqlite3");
 
-const db = new Database("speed.db");
+let port = parseInt(process.env.PORT);
+if( !port ) throw new Error("Invalid PORT");
+
+const db = new Database("/home/pi4/speed.db");
 
 const selectStm = db.prepare(`SELECT start, end, duration, filesize, (filesize / duration) AS speed FROM speed ORDER BY id DESC LIMIT :limit OFFSET :offset`);
-const perPage = 100;
+const perPage = 5;
 
 http.createServer((req, res) => {
     let url = new URL(req.url, "http://localhost");
@@ -31,6 +34,6 @@ http.createServer((req, res) => {
         res.writeHead(500, { "Content-Type": "text/html" });
         res.end("<h1>500 Internal Server Error</h1>");
     }
-}).listen(3000, () => {
-    console.log("Server is running on port 3000");
+}).listen(port, () => {
+    console.log(`Server is running on port ${port}`);
 });

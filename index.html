@@ -50,13 +50,13 @@
                             <td><code>${result.speed/1000}</code></td>
                         `;
                         results.appendChild(row);
-                        // add to beggining of the array
-                        speedChart.data.labels.unshift(new Date(result.start).toISOString());
-                        speedChart.data.datasets[0].data.unshift(result.speed/1000);
+                        speedChart.data.labels.push(new Date(result.start).toISOString());
+                        speedChart.data.datasets[0].data.push(result.speed/1000);
                         speedChart.update();
                     }
-                    if(data.length > 0 && result.start > new Date(Date.now() - 24 * 60 * 60 * 1000)){ // only load the last 24 hours
-                        setTimeout(() => loadData(page + 1), 200);
+                    if(data.length > 0){
+					setTimeout(() =>
+                        loadData(page + 1), 1000)
                     }
                 });
         }
