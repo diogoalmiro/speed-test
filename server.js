@@ -34,6 +34,6 @@ http.createServer((req, res) => {
         res.writeHead(500, { "Content-Type": "text/html" });
         res.end("<h1>500 Internal Server Error</h1>");
     }
-}).listen(3000, () => {
-    console.log("Server is running on port 3000");
+}).listen(port, () => {
+    console.log(`Server is running on port ${port}`);
 });
