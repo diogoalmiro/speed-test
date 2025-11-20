@@ -66,7 +66,7 @@
                         `;
                         results.appendChild(row);
                         // add to beggining of the array
-                        speedChart.data.labels.unshift(result.start);
+                        speedChart.data.labels.unshift(formatTime(result.start));
                         speedChart.data.datasets[0].data.unshift(result.speed/1000);
                         speedChart.update();
                     }
