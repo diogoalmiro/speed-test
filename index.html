@@ -7,35 +7,52 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 </head>
 <body class="container">
-    <h1>Speed results</h1>
+    <h1>Download speed (last 24 hours)</h1>
     <canvas id="speedChart"></canvas>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Start</th>
-                <th>End</th>
-                <th>Duration (s)</th>
-                <th>Filesize (MB)</th>
-                <th>Speed (MB/s)</th>
-            </tr>
-        </thead>
-        <tbody id="results"></tbody>
-    </table>
     <script>
         let speedChart = null;
         function createSpeedChart(){
             speedChart = new Chart(document.getElementById("speedChart"), {
-                type: "line",
+                type: "scatter",
                 data: {
-                    labels: [],
+                    labels: [formatTime(Date.now()), formatTime(Date.now() - 24 * 60 * 60 * 1000)],
                     datasets: [{
                         label: "Speed",
-                        data: [],
+                        data: [{
+                            x: Date.now(),
+                            y: 0
+                        },{
+                            x: Date.now() - 24 * 60 * 60 * 1000,
+                            y: 500
+                        }],
                     }]
                 },
-                scales: {
-                    x: {
-                        type: "time",
+                options: {
+                    scales: {
+                        x: {
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    return formatTime(value);
+                                }
+                            }
+                        },
+                        y: {
+                            min: 0,
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    return `${value.toFixed(2)} MB/s`;
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.parsed.y.toFixed(2)} MB/s`;
+                                }
+                            }
+                        }
                     }
                 }
             });
@@ -56,48 +73,25 @@
                 .then(data => {
                     const results = document.getElementById("results");
                     for(const result of data){
-                        const row = document.createElement("tr");
-                        row.innerHTML = `
-                            <td><code>${new Date(result.start).toISOString()}</code></td>
-                            <td><code>${new Date(result.end).toISOString()}</code></td>
-                            <td><code>${result.duration/1000}</code></td>
-                            <td><code>${result.filesize/1000000}</code></td> 
-                            <td><code>${result.speed/1000}</code></td>
-                        `;
-                        results.appendChild(row);
-                        // add to beggining of the array
                         speedChart.data.labels.unshift(formatTime(result.start));
-                        speedChart.data.datasets[0].data.unshift(result.speed/1000);
-                        speedChart.update();
+                        speedChart.data.datasets[0].data.unshift({
+                            x: result.start,
+                            y: result.speed/1000
+                        });
                     }
-                    // Merge close speeds < 0.9 difference
-                    let newlabels = [speedChart.data.labels[0]];
-                    let newdata = [speedChart.data.datasets[0].data[0]];
-                    for( let i = 1; i < speedChart.data.labels.length - 2; i++ ){
-                        let currLabel = speedChart.data.labels[i];
-                        let prevValue = newdata.at(-1);
-                        let futureValue = speedChart.data.datasets[0].data[i+1];
-                        let currValue = speedChart.data.datasets[0].data[i];
-                        if( Math.abs(prevValue - currValue) > 0.9 ){
-                            newlabels.push(currLabel);
-                            newdata.push(currValue);
-                        }
-                        else if( Math.abs(currValue - futureValue) > 0.9 ){
-                            newlabels.push(currLabel);
-                            newdata.push(currValue);
-                        }
-                    }
-                    speedChart.data.labels = newlabels;
-                    speedChart.data.datasets[0].data = newdata;
-                    speedChart.update();
                     if(data.length > 0 && data[data.length - 1].start > new Date(Date.now() - 24 * 60 * 60 * 1000)){ // only load the last 24 hours
-                        setTimeout(() => loadData(page + 1), 200);
+                        setTimeout(() => loadData(page + 1), 0);
+                    }
+                    else{
+                        speedChart.update();
                     }
                 });
         }
         window.addEventListener("DOMContentLoaded", () => {
             createSpeedChart();
-            loadData();
+            speedChart.data.datasets[0].data = [];
+            speedChart.data.labels = [];
+            setTimeout(() => loadData(), 0);
         });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
